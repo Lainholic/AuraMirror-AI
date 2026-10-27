@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AuraMirror AI — Smart Mirror & Wearable Skincare Agent</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+  <!-- Ambient Glow Background -->
+  <div class="glow-bg"></div>
+
+  <div class="app-container">
+    <!-- Top Smart Mirror Header -->
+    <header class="mirror-header">
+      <div class="mirror-time">
+        <h1 id="live-clock">00:00</h1>
+        <p id="live-date">Tuesday, October 27, 2026</p>
+      </div>
+      <div class="mirror-brand">
+        <span class="badge-pulse" id="engine-status-badge"><i class="fa-solid fa-cube"></i> RULE-BASED INGREDIENT POC</span>
+        <h2>AuraMirror <span>AI</span></h2>
+        <p>Smart Mirror Vision & Wearable Lifelog Skincare Coach</p>
+      </div>
+      <div class="mirror-weather">
+        <div class="weather-icon"><i class="fa-solid fa-cloud-sun"></i></div>
+        <div class="weather-info">
+          <span>19°C Clear <small>(Simulated)</small></span>
+          <small>UV Index: 5 (Moderate)</small>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Grid -->
+    <div class="main-layout">
+      <!-- Left: Mirror / Camera Panel -->
+      <section class="camera-panel glass-card">
+        <div class="panel-header">
+          <h3><i class="fa-solid fa-camera"></i> Vision Sensor (Webcam Feed)</h3>
+          <div class="mode-toggles">
+            <span class="mode-badge" id="camera-status-pill" style="color: #64ffda; font-size: 0.85rem; font-weight: 500;"><i class="fa-solid fa-video"></i> Webcam Sensor Active</span>
+          </div>
+        </div>
+
+        <!-- Camera Viewport with Face Guide -->
+        <div class="viewport-wrapper">
+          <video id="webcam-video" autoplay playsinline muted></video>
+          <canvas id="capture-canvas" style="display:none;"></canvas>
+
+          <!-- Interactive Mask Overlay Canvas -->
+          <canvas id="mask-canvas"></canvas>
+
+          <!-- Face Alignment Guide Oval -->
+          <div class="face-guide" id="face-guide">
+            <div class="guide-oval"></div>
+            <p class="guide-hint"><i class="fa-solid fa-arrows-to-circle"></i> Align face inside the oval guide</p>
+          </div>
+
+          <!-- Scanning Scanline Effect -->
+          <div class="scanline" id="scanline"></div>
+        </div>
+
+        <!-- Mask Toggle Bar (Appears after analysis) -->
+        <div class="mask-toggles" id="mask-controls" style="display:none;">
+          <span class="mask-label"><i class="fa-solid fa-layer-group"></i> Visual Masks:</span>
+          <button class="mask-btn" onclick="toggleMask('oiliness')"><span class="dot yellow"></span> Sebum (T-Zone)</button>
+          <button class="mask-btn" onclick="toggleMask('dark_circle')"><span class="dot blue"></span> Dark Circles</button>
+          <button class="mask-btn" onclick="toggleMask('pore')"><span class="dot red"></span> Pores</button>
+          <button class="mask-btn" onclick="toggleMask('redness')"><span class="dot green"></span> Redness</button>
+          <button class="mask-btn" onclick="clearMasks()">Clear</button>
+        </div>
+
+        <!-- Action Trigger -->
+        <div class="action-footer">
+          <button class="scan-btn" id="btn-scan" onclick="triggerFullPipeline()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Scan Face & Get Skincare Suggestions
+          </button>
+        </div>
+      </section>
+
+      <!-- Right: Wearables & Diagnosis & Prescriptions -->
+      <section class="results-panel">
+        <!-- 1. Wearable Live Feed (Simulated / Connected) -->
+        <div class="wearable-card glass-card">
+          <div class="card-title">
+            <h4><i class="fa-solid fa-heart-pulse"></i> Wearable Lifelog (Simulator)</h4>
+            <span class="status-tag">Simulation Mode</span>
+          </div>
+          <div class="wearable-grid">
+            <div class="wearable-item">
+              <span class="w-label"><i class="fa-solid fa-bed"></i> Total Sleep</span>
+              <strong id="disp-sleep">5.0 hrs</strong>
+              <input type="range" id="input-sleep" min="3" max="10" step="0.5" value="5.0" oninput="updateWearable()">
+            </div>
+            <div class="wearable-item">
+              <span class="w-label"><i class="fa-solid fa-moon"></i> Deep Sleep</span>
+              <strong id="disp-deep">45 min</strong>
+              <input type="range" id="input-deep" min="10" max="120" step="5" value="45" oninput="updateWearable()">
+            </div>
+            <div class="wearable-item">
+              <span class="w-label"><i class="fa-solid fa-sun"></i> UV Exposure</span>
+              <strong id="disp-uv">2.5 hrs</strong>
+              <input type="range" id="input-uv" min="0" max="6" step="0.5" value="2.5" oninput="updateWearable()">
+            </div>
+            <div class="wearable-item">
+              <span class="w-label"><i class="fa-solid fa-glass-water"></i> Hydration</span>
+              <strong id="disp-water">900 ml</strong>
+              <input type="range" id="input-water" min="300" max="2500" step="100" value="900" oninput="updateWearable()">
+            </div>
+          </div>
+          <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; color: #8892b0;">
+            <span><i class="fa-solid fa-gauge-high"></i> Perceived Stress:</span>
+            <select id="input-stress" style="background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); color: #e2e8f0; border-radius: 6px; padding: 3px 8px; font-size: 0.8rem;">
+              <option value="Moderate" selected>Moderate</option>
+              <option value="Elevated">Elevated</option>
+              <option value="Relaxed">Relaxed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- 2. Skin AI Score Dashboard -->
+        <div class="score-card glass-card" id="score-section">
+          <div class="score-summary">
+            <div class="summary-badge">
+              <span class="badge-title">Estimated Skin Age</span>
+              <div class="badge-value" id="disp-skin-age">--<small> yrs</small></div>
+            </div>
+            <div class="summary-badge primary">
+              <span class="badge-title">Overall Skin Score</span>
+              <div class="badge-value" id="disp-overall-score">--<small>/100</small></div>
+            </div>
+          </div>
+
+          <div class="metric-bars">
+            <div class="metric-row">
+              <span>Texture</span>
+              <div class="progress-bar"><div class="fill" id="bar-texture" style="width: 0%;"></div></div>
+              <strong id="score-texture">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Pores</span>
+              <div class="progress-bar"><div class="fill" id="bar-pore" style="width: 0%;"></div></div>
+              <strong id="score-pore">--</strong>
+            </div>
+            <div class="metric-row alert-row">
+              <span>Oiliness / Sebum</span>
+              <div class="progress-bar alert"><div class="fill warning" id="bar-oiliness" style="width: 0%;"></div></div>
+              <strong id="score-oiliness">--</strong>
+            </div>
+            <div class="metric-row alert-row">
+              <span>Dark Circles</span>
+              <div class="progress-bar alert"><div class="fill warning" id="bar-dark-circle" style="width: 0%;"></div></div>
+              <strong id="score-dark-circle">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Moisture</span>
+              <div class="progress-bar"><div class="fill" id="bar-moisture" style="width: 0%;"></div></div>
+              <strong id="score-moisture">--</strong>
+            </div>
+            <div class="metric-row">
+              <span>Redness</span>
+              <div class="progress-bar"><div class="fill" id="bar-redness" style="width: 0%;"></div></div>
+              <strong id="score-redness">--</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Rule-Based Skincare Routine Guidance -->
+        <div class="llm-card glass-card" id="prescription-section">
+          <div class="card-title">
+            <h4><i class="fa-solid fa-flask-vial"></i> Daily Wellness Skincare Guide</h4>
+            <span class="ai-chip">Rule-Based Ingredient Mapping</span>
+          </div>
+          <div class="headline-box" id="disp-headline">
+            "Click scan to start camera-based skin score analysis & rule-based suggestions."
+          </div>
+          
+          <div class="root-causes-box">
+            <h5><i class="fa-solid fa-circle-exclamation"></i> Lifelog & Skin Score Insights:</h5>
+            <ul id="list-causes">
+              <li>Align face in the oval guide and press scan to analyze skin metrics.</li>
+            </ul>
+          </div>
+
+          <div class="routines-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px;">
+            <div class="routine-col morning">
+              <h6><i class="fa-solid fa-sun"></i> Morning Routine</h6>
+              <p id="disp-routine-morning">Daily morning routine appears here upon scan.</p>
+            </div>
+            <div class="routine-col evening">
+              <h6><i class="fa-solid fa-moon"></i> Evening Routine</h6>
+              <p id="disp-routine-evening">Evening restorative regimen appears here upon scan.</p>
+            </div>
+            <div class="routine-col lifestyle">
+              <h6><i class="fa-solid fa-leaf"></i> Lifestyle Tip</h6>
+              <p id="disp-routine-lifestyle">Hydration and recovery recommendations appear here.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4. Rule-Based Ingredient Cards & Global Retail Links -->
+        <div class="ecommerce-card glass-card">
+          <div class="card-title">
+            <h4><i class="fa-solid fa-bag-shopping"></i> Rule-Based Active Ingredients & Global Search</h4>
+            <span class="commerce-tag"><i class="fa-solid fa-check-double"></i> Rule-Based PoC</span>
+          </div>
+          <div class="products-grid" id="products-container">
+            <!-- Dynamic Rule-Based Ingredient Cards Injected Here -->
+          </div>
+        </div>
+
+      </section>
+    </div>
+
+    <!-- Wellness Disclaimer Footer -->
+    <footer style="margin-top: 24px; text-align: center; color: #8892b0; font-size: 0.8rem; padding-bottom: 20px;">
+      <p><i class="fa-solid fa-shield-heart"></i> AuraMirror AI is an educational wellness proof-of-concept for skincare guidance. It does not provide medical diagnosis or therapeutic treatment.</p>
+    </footer>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
